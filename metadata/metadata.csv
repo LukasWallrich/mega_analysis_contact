@@ -1,0 +1,5 @@
+﻿dataset,filename,year,country,outgroup_category,outgroup_specific,design,open,article_doi,data_url
+bal_2022,NCC Contact S1 (Italy).sav,2022,Italy,other,female managers,cross-sectional,yes,https://doi.org/10.1002/casp.2616,https://osf.io/e9m86?view_only=2624a5b8a12f49869e953a9d0f3720b6
+rup_2022a,STUDY_3_RAW_DATA.sav,2021,Bosnia & Herzegovina,ethnic,Croats/Serbs,cross-sectional,yes,https://doi.org/10.1111/jasp.12835,https://osf.io/uz4ac
+hon_2021a,BLM_Sona.dta,2021,USA,ethnic,African-American,cross-sectional,yes,https://doi.org/10.1111/asap.12230,https://osf.io/kmvzc
+hon_2021b,BLM_Mturk.dta,2021,USA,ethnic,African-American,cross-sectional,yes,https://doi.org/10.1111/asap.12230,https://osf.io/dby78

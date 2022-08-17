@@ -1,0 +1,195 @@
+﻿dataset,var,scale,name,note
+bal_2022,gender,,sex,
+bal_2022,att1,attitude_belief,wams1,attitudes towards women as managers
+bal_2022,att2,attitude_belief,wams2,attitudes towards women as managers
+bal_2022,att3,attitude_belief,wams3,attitudes towards women as managers
+bal_2022,att4,attitude_belief,wams4,attitudes towards women as managers
+bal_2022,att5,attitude_belief,wams5,attitudes towards women as managers
+bal_2022,att6,attitude_belief,wams6,attitudes towards women as managers
+bal_2022,att7,attitude_belief,wams7,attitudes towards women as managers
+bal_2022,att8,attitude_belief,wams8,attitudes towards women as managers
+bal_2022,att9,attitude_belief,wams9,attitudes towards women as managers
+bal_2022,att10,attitude_belief,wams10,attitudes towards women as managers
+bal_2022,att11,attitude_belief,wams11,attitudes towards women as managers
+bal_2022,att12,attitude_belief,wams12,attitudes towards women as managers
+bal_2022,att13,attitude_belief,wams13,attitudes towards women as managers
+bal_2022,att14,attitude_belief,wams14,attitudes towards women as managers
+bal_2022,att15,attitude_belief,wams15,attitudes towards women as managers
+bal_2022,att16,attitude_belief,wams16,attitudes towards women as managers
+bal_2022,att17,attitude_belief,wams17,attitudes towards women as managers
+bal_2022,att18,attitude_belief,wams18,attitudes towards women as managers
+bal_2022,att19,attitude_belief,wams19,attitudes towards women as managers
+bal_2022,att20,attitude_belief,wams20,attitudes towards women as managers
+bal_2022,att21,attitude_belief,wams21,attitudes towards women as managers
+bal_2022,freq1,contact_frequency,inter1,
+bal_2022,freq2,contact_frequency,inter2,
+bal_2022,contact_quality,,inter3,
+bal_2022,political_orientation,,opolitic,Left-right
+bal_2022,age,,eta,
+hon_2021a,att1,attitude_blm_action,Q_31_1,actions in support of Black Lives Matter
+hon_2021a,att2,attitude_blm_action,Q_31_2,
+hon_2021a,att3,attitude_blm_action,Q_31_3,
+hon_2021a,att4,attitude_blm_action,Q_31_4,
+hon_2021a,att5,attitude_blm_action,Q_31_5,
+hon_2021a,att6,attitude_blm_action,Q_31_6,
+hon_2021a,att7,attitude_blm_action,Q_31_7,
+hon_2021a,att8,attitude_blm_action,Q_31_8,
+hon_2021a,att9,attitude_blm_action,Q_31_9,
+hon_2021a,att10,attitude_blm_action,Q_31_10,
+hon_2021a,att11,attitude_blm_action,Q_31_11,
+hon_2021a,att12,attitude_blm_action,Q_31_12,
+hon_2021a,age,,Q7_1,
+hon_2021a,gender,,Q8,
+hon_2021a,political_orientation,,Q12,liberal-conservative
+hon_2021a,friends_black,,Q29_1,
+hon_2021a,friends_asian,,Q29_2,
+hon_2021a,friends_hispanic,,Q29_3,
+hon_2021a,friends_white,,Q29_4,
+hon_2021a,friends_native,,Q29_5,
+hon_2021a,neighbors_black,,Q30_1,variable calculated as mean of shares
+hon_2021a,neighbors_asian,,Q30_2,
+hon_2021a,neighbors_hispanic,,Q30_3,
+hon_2021a,neighbors_white,,Q30_4,
+hon_2021a,neighbors_native,,Q30_5,
+hon_2021a,family_friends_black,,Q31_1,
+hon_2021a,family_friends_asian,,Q31_2,
+hon_2021a,family_friends_hispanic,,Q31_3,
+hon_2021a,family_friends_white,,Q31_4,
+hon_2021a,family_friends_native,,Q31_5,
+hon_2021a,affiliates_black,,Q32_1,
+hon_2021a,affiliates_asian,,Q32_2,
+hon_2021a,affiliates_hispanic,,Q32_3,
+hon_2021a,affiliates_white,,Q32_4,
+hon_2021a,affiliates_native,,Q32_5,
+hon_2021a,relatives_black,,Q33_1,
+hon_2021a,relatives_asian,,Q33_2,
+hon_2021a,relatives_hispanic,,Q33_3,
+hon_2021a,relatives_white,,Q33_4,
+hon_2021a,relatives_native,,Q33_5,
+hon_2021a,professionals_black,,Q34_1,
+hon_2021a,professionals_asian,,Q34_2,
+hon_2021a,professionals_hispanic,,Q34_3,
+hon_2021a,professionals_white,,Q34_4,
+hon_2021a,professionals_native,,Q34_5,
+hon_2021a,doctors_black,,Q35_1,
+hon_2021a,doctors_asian,,Q35_2,
+hon_2021a,doctors_hispanic,,Q35_3,
+hon_2021a,doctors_white,,Q35_4,
+hon_2021a,doctors_native,,Q35_5,
+hon_2021a,social_media_black,,Q36_1,Drop after reproduction - no direct contact
+hon_2021a,social_media_asian,,Q36_2,Drop after reproduction - no direct contact
+hon_2021a,social_media_hispanic,,Q36_3,Drop after reproduction - no direct contact
+hon_2021a,social_media_white,,Q36_4,Drop after reproduction - no direct contact
+hon_2021a,social_media_native,,Q36_5,Drop after reproduction - no direct contact
+hon_2021a,ethn_black,,Q9_1,
+hon_2021a,ethn_asian,,Q9_2,
+hon_2021a,ethn_hispanic,,Q9_3,
+hon_2021a,ethn_white,,Q9_4,
+hon_2021a,ethn_native,,Q9_5,
+hon_2021a,ethn_other,,Q9_6,
+hon_2021a,auth1,authoritarian,Q281_1,legal_authority
+hon_2021a,auth2,authoritarian,Q281_2,
+hon_2021a,auth3,authoritarian,Q281_3,
+hon_2021a,auth4,authoritarian,Q281_4,
+hon_2021a,auth5,authoritarian,Q281_5,
+hon_2021a,auth6,authoritarian,Q281_6,
+hon_2021a,auth7,authoritarian,Q281_7,
+hon_2021a,auth8,authoritarian,Q281_8,
+hon_2021a,auth9,authoritarian,Q281_9,
+hon_2021a,auth10,authoritarian,Q281_10,
+hon_2021a,auth11,authoritarian,Q281_11,
+hon_2021a,auth12,authoritarian,Q281_12,
+hon_2021a,auth13,authoritarian,Q281_13,
+hon_2021a,auth14,authoritarian,Q281_14,
+hon_2021a,auth15,authoritarian,Q281_15,
+hon_2021a,auth16,authoritarian,Q281_16,
+hon_2021a,auth17,authoritarian,Q281_17,
+hon_2021a,auth18,authoritarian,Q281_18,
+hon_2021a,auth19,authoritarian,Q281_19,
+hon_2021a,auth20,authoritarian,Q281_20,
+hon_2021a,auth21,authoritarian,Q281_21,
+hon_2021a,auth22,authoritarian,Q281_22,
+hon_2021a,auth23,authoritarian,Q281_23,
+hon_2021a,attitude_blm_support,,Q30,
+hon_2021a,attention,,AC,
+hon_2021b,att1,attitude_blm_action,Q_31_1,actions in support of Black Lives Matter
+hon_2021b,att2,attitude_blm_action,Q_31_2,
+hon_2021b,att3,attitude_blm_action,Q_31_3,
+hon_2021b,att4,attitude_blm_action,Q_31_4,
+hon_2021b,att5,attitude_blm_action,Q_31_5,
+hon_2021b,att6,attitude_blm_action,Q_31_6,
+hon_2021b,att7,attitude_blm_action,Q_31_7,
+hon_2021b,att8,attitude_blm_action,Q_31_8,
+hon_2021b,att9,attitude_blm_action,Q_31_9,
+hon_2021b,att10,attitude_blm_action,Q_31_10,
+hon_2021b,att11,attitude_blm_action,Q_31_11,
+hon_2021b,att12,attitude_blm_action,Q_31_12,
+hon_2021b,age,,Q7_1,
+hon_2021b,gender,,Q8,
+hon_2021b,political_orientation,,Q12,liberal-conservative
+hon_2021b,friends_black,,Q29_1,
+hon_2021b,friends_asian,,Q29_2,
+hon_2021b,friends_hispanic,,Q29_3,
+hon_2021b,friends_white,,Q29_4,
+hon_2021b,friends_native,,Q29_5,
+hon_2021b,neighbors_black,,Q30_1,variable calculated as mean of shares
+hon_2021b,neighbors_asian,,Q30_2,
+hon_2021b,neighbors_hispanic,,Q30_3,
+hon_2021b,neighbors_white,,Q30_4,
+hon_2021b,neighbors_native,,Q30_5,
+hon_2021b,family_friends_black,,Q31_1,
+hon_2021b,family_friends_asian,,Q31_2,
+hon_2021b,family_friends_hispanic,,Q31_3,
+hon_2021b,family_friends_white,,Q31_4,
+hon_2021b,family_friends_native,,Q31_5,
+hon_2021b,affiliates_black,,Q32_1,
+hon_2021b,affiliates_asian,,Q32_2,
+hon_2021b,affiliates_hispanic,,Q32_3,
+hon_2021b,affiliates_white,,Q32_4,
+hon_2021b,affiliates_native,,Q32_5,
+hon_2021b,relatives_black,,Q33_1,
+hon_2021b,relatives_asian,,Q33_2,
+hon_2021b,relatives_hispanic,,Q33_3,
+hon_2021b,relatives_white,,Q33_4,
+hon_2021b,relatives_native,,Q33_5,
+hon_2021b,professionals_black,,Q34_1,
+hon_2021b,professionals_asian,,Q34_2,
+hon_2021b,professionals_hispanic,,Q34_3,
+hon_2021b,professionals_white,,Q34_4,
+hon_2021b,professionals_native,,Q34_5,
+hon_2021b,doctors_black,,Q35_1,
+hon_2021b,doctors_asian,,Q35_2,
+hon_2021b,doctors_hispanic,,Q35_3,
+hon_2021b,doctors_white,,Q35_4,
+hon_2021b,doctors_native,,Q35_5,
+hon_2021b,social_media_black,,Q36_1,Drop after reproduction - no direct contact
+hon_2021b,social_media_asian,,Q36_2,Drop after reproduction - no direct contact
+hon_2021b,social_media_hispanic,,Q36_3,Drop after reproduction - no direct contact
+hon_2021b,social_media_white,,Q36_4,Drop after reproduction - no direct contact
+hon_2021b,social_media_native,,Q36_5,Drop after reproduction - no direct contact
+hon_2021b,ethn,,Q9,
+hon_2021b,auth1,authoritarian,Q281_1,legal_authority
+hon_2021b,auth2,authoritarian,Q281_2,
+hon_2021b,auth3,authoritarian,Q281_3,
+hon_2021b,auth4,authoritarian,Q281_4,
+hon_2021b,auth5,authoritarian,Q281_5,
+hon_2021b,auth6,authoritarian,Q281_6,
+hon_2021b,auth7,authoritarian,Q281_7,
+hon_2021b,auth8,authoritarian,Q281_8,
+hon_2021b,auth9,authoritarian,Q281_9,
+hon_2021b,auth10,authoritarian,Q281_10,
+hon_2021b,auth11,authoritarian,Q281_11,
+hon_2021b,auth12,authoritarian,Q281_12,
+hon_2021b,auth13,authoritarian,Q281_13,
+hon_2021b,auth14,authoritarian,Q281_14,
+hon_2021b,auth15,authoritarian,Q281_15,
+hon_2021b,auth16,authoritarian,Q281_16,
+hon_2021b,auth17,authoritarian,Q281_17,
+hon_2021b,auth18,authoritarian,Q281_18,
+hon_2021b,auth19,authoritarian,Q281_19,
+hon_2021b,auth20,authoritarian,Q281_20,
+hon_2021b,auth21,authoritarian,Q281_21,
+hon_2021b,auth22,authoritarian,Q281_22,
+hon_2021b,auth23,authoritarian,Q281_23,
+hon_2021b,attitude_blm_support,,Q30,
+hon_2021b,attention,,AC,
