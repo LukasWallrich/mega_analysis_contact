@@ -1,0 +1,11 @@
+﻿dataset,filename,year,country,outgroup_category,outgroup_specific,design,open,article_doi,data_url
+bal_2022,NCC Contact S1 (Italy).sav,2022,Italy,other,female managers,cross-sectional,yes,https://doi.org/10.1002/casp.2616,https://osf.io/e9m86?view_only=2624a5b8a12f49869e953a9d0f3720b6
+rup_2022a,STUDY_3_RAW_DATA.sav,2021,Bosnia & Herzegovina,ethnic,Croats/Serbs,cross-sectional,yes,https://doi.org/10.1111/jasp.12835,https://osf.io/uz4ac
+hon_2021a,BLM_Sona.dta,2021,USA,ethnic,African-American,cross-sectional,yes,https://doi.org/10.1111/asap.12230,https://osf.io/kmvzc
+hon_2021b,BLM_Mturk.dta,2021,USA,ethnic,African-American,cross-sectional,yes,https://doi.org/10.1111/asap.12230,https://osf.io/dby78
+allbus_19802018,ZA5276_v1-1-0.sav,1980,Germany,immigrants,"foreigners / ""guest workers""",cross-sectional,yes,https://search.gesis.org/research_data/ZA5276,
+has_2020a,CSc_agdata1.csv,2020,multiple,ethnic,African-American,cross-sectional,yes,https://doi.org/10.1038/s41562-019-0815-z,https://osf.io/qrx95
+GSS_19722021,GSS7218_R3.sav,1972,USA,multiple,multiple,cross-sectional,yes,https://github.com/kjhealy/gssr,https://gss.norc.org/get-the-data/spss
+ess_2014,ESS7e02_2.sav,,,,,cross-sectional,yes,,
+has_2020c,CSc_hedata1.csv,2020,multiple,Sexuality,LGBTIQ+ individuals,cross-sectional,yes,https://doi.org/10.1038/s41562-019-0815-z,
+wal_2021,AllResponses.csv,2018,UK,ethnic,Black British,cross-sectional,yes,https://doi.org/10.1002/ejsp.2822,http:https://osf.io/sbpxj/

@@ -15,7 +15,8 @@
 ## Data processing
 
 - Identify all variables measuring contact, intergroup attitudes or behaviours
-- Create scales as per original publication and/or questionnaire design
+- Create scales as per original publication and/or questionnaire design, except
+    - feeling thermometers recoded into relative preference (outgroup - own group) -> shown to have less measurement errors than absolute scale (O'Shea & Weirs, 2020)
 - Recode: 
     - gender into male/female/other
 

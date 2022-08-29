@@ -16,7 +16,7 @@ source(here("0_code_helpers", "dataset_prep_functions.R"))
 ##                   1. Read and prepare data                   ##
 ##################################################################
 
-dataset_name <- "_____"
+dataset_name <- "rup_2022a"
 
 data <- read_and_augment(dataset_name)
 
@@ -28,9 +28,9 @@ data <- read_and_augment(dataset_name)
 # data %>% select(-all_of(outlist)) %>% summarise(across(where(is.numeric), range_)) %>% glimpse()
 # data %>% select(-all_of(outlist), -where(is.numeric)) %>% summarise(across(everything(), print_levels)) %>% glimpse()
 
-# Fix types
-data <- data %>% 
-  mutate(_____)
+data <- data %>% mutate(gender = case_when(gender == 1 ~ "male",
+                                            gender == 2 ~ "female",
+                                            TRUE ~ "other/not reported") %>% as_factor())
 
 miss_summary <- miss_var_summary(data)
 
@@ -38,17 +38,12 @@ if(sum(miss_summary$n_miss) == 0 ) {
     log("MISSING DATA: ", "All cases were complete")
 } else {
     log("MISSING DATA: ", 
-    glue::glue("Variables had up to {round(max(miss_summary$pct_miss),2)}% missing data"))
+    glue::glue("Variables had up to {round_(max(miss_summary$pct_miss), 2)}% missing data"))
 }
 
-## Identify whether missingness was planned. If so, log. 
-#Otherwise, impute and log that
-
-log("___")
-
-## IF IMPUTING, otherwise delete:
 # Prepare for imputation
 outlist <- c(str_subset(names(data), "CMA.*"), "weight")
+data <- haven::zap_labels(data)
 
 # Check if any remaining variables are constant or linearly dependent
 # If so, add to outlist
@@ -56,12 +51,11 @@ ini <- mice(data, maxit = 0)
 ini$loggedEvents %>% filter(!out %in% outlist) 
 
 #Use quickpred extension that considers unordered factors correctly
-source(here("0_code_helpers", "mice_quickpred_extension.R"))
+source("https://raw.githubusercontent.com/LukasWallrich/rNuggets/5dc76f1998ca35b07a0434c5c6b19d4812147daa/R/mice_quickpred_extension.R")
 
 pred <- quickpred_ext(data, exclude = outlist)
 
 #impute with mice
-message("Starting imputation")
 data_imp <- parlmice(data, pred = pred, maxit = 50, m = 10, cluster.seed = 300688, printFlag = FALSE, n.core = 5, n.imp.core = 2)
 
 data <- complete(data_imp, action = "long", include = TRUE)
@@ -72,19 +66,11 @@ data <- complete(data_imp, action = "long", include = TRUE)
 
 data <- create_scales(data)
 
-# Manual for more complicated scales
-
 ##################################################################
 ##                   3. Recode vars                             ##
 ##################################################################
 
-# Recode variables
-# add more than gender
-data <- data %>% mutate(
-  gender = fct_collapse(as_factor(gender), 
-    male = "1", female = "2",
-    other_level = "other/not reported")
-)
+# None needed
 
 ##################################################################
 ##               4. Reproduce descriptives                      ##
@@ -92,7 +78,7 @@ data <- data %>% mutate(
 
 data %>% 
   filter(.imp == "0") %>%
-  filter(TRUE) %>% #as per original article
+  filter(TRUE) %>% #original article likely used listwise deletion - not reported, so ignored here
   select(!starts_with("CMA_"), -weight, -.id, -.imp) %>%
   select(all_of(sort(colnames(.)))) %>%
   mutate(gender = (gender == "female") %>% as.numeric()) %>%
@@ -112,12 +98,19 @@ data %>%
 ##                 5. Create output files                       ##
 ##################################################################
 
-# Create filter variable to remove outgroup members
-data <- data %>% mutate(filter = case_when(white ~ "high_status",
-                                           not_black ~ "not_outgroup")) %>%
-  filter(!is.na(filter)) %>%
-  select(everything())
+# Create filter variable - no outgroup members in sample
 
+data <- data %>% mutate(filter = "not_outgroup",
+                        attitude_thermometer_serbs = attitude_feelings_serbs - attitude_feelings_bosniaks,
+                        attitude_thermometer_croats = attitude_feelings_croats - attitude_feelings_bosniaks
+                                           ) %>%
+  filter(!is.na(filter)) %>%
+  select(-matches("_feelings_"))
+
+#Separate two outgroups
+data1 <- data %>% select(!ends_with("_croats")) %>% mutate(CMA_outgroup_specific = "Serbs") %>% rename_with(~str_remove(., "_serbs"))
+data2 <- data %>% select(!ends_with("_serbs")) %>% mutate(CMA_outgroup_specific = "Croats")  %>% rename_with(~str_remove(., "_croats"))
+data <- rbind(data1, data2)
 
 # Convert to long data
 data_long <- data %>% make_long()
@@ -126,6 +119,3 @@ data_long <- data %>% make_long()
 save_data(data, data_long, dataset_name)
 
 message("Done processing ", dataset_name)
-
-# Reset log - before sourcing completed file
-# reset_log()

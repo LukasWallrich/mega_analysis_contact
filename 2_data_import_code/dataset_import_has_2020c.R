@@ -16,21 +16,13 @@ source(here("0_code_helpers", "dataset_prep_functions.R"))
 ##                   1. Read and prepare data                   ##
 ##################################################################
 
-dataset_name <- "_____"
+dataset_name <- "has_2020c"
 
-data <- read_and_augment(dataset_name)
+data <- read_and_augment(dataset_name, delim = ";", locale = locale(decimal_mark = ","))
 
 ##################################################################
 ##                   2. Check missing data                      ##
 ##################################################################
-
-# Check types and missingness codes
-# data %>% select(-all_of(outlist)) %>% summarise(across(where(is.numeric), range_)) %>% glimpse()
-# data %>% select(-all_of(outlist), -where(is.numeric)) %>% summarise(across(everything(), print_levels)) %>% glimpse()
-
-# Fix types
-data <- data %>% 
-  mutate(_____)
 
 miss_summary <- miss_var_summary(data)
 
@@ -41,21 +33,28 @@ if(sum(miss_summary$n_miss) == 0 ) {
     glue::glue("Variables had up to {round(max(miss_summary$pct_miss),2)}% missing data"))
 }
 
-## Identify whether missingness was planned. If so, log. 
-#Otherwise, impute and log that
+log("Missing predominantly contact measures - possibly mostly planned missingness, since contact_frequency is always given. Due to residualised data, this cannot be assessed directly. Only max 0.06% missing data on attitude measures.
 
-log("___")
+Paper is running CFA with listwise deletion - highly problematic with planned missingness.
 
-## IF IMPUTING, otherwise delete:
+Here, we don't impute contact measures for cases with all contact measures missing (apart from frequency); not imputing contact_friends_frequency, not using it for imputations.
+")
+
+data <- data %>% mutate(share_contact_na = rowMeans(across(c(starts_with("contact_"), -contact_frequency), is.na)))
+
 # Prepare for imputation
-outlist <- c(str_subset(names(data), "CMA.*"), "weight")
+outlist <- c(str_subset(names(data), "CMA.*"), "weight", "contact_friends_frequency", "share_contact_na")
+
+# Check types and missingness codes
+# data %>% select(-all_of(outlist)) %>% summarise(across(where(is.numeric), range_)) %>% glimpse()
 
 # Check if any remaining variables are constant or linearly dependent
 # If so, add to outlist
 ini <- mice(data, maxit = 0)
 ini$loggedEvents %>% filter(!out %in% outlist) 
 
-#Use quickpred extension that considers unordered factors correctly
+#Use quickpred extension that considers unordered factors correctly - from https://raw.githubusercontent.com/LukasWallrich/rNuggets/5dc76f1998ca35b07a0434c5c6b19d4812147daa/R/mice_quickpred_extension.R
+
 source(here("0_code_helpers", "mice_quickpred_extension.R"))
 
 pred <- quickpred_ext(data, exclude = outlist)
@@ -66,28 +65,34 @@ data_imp <- parlmice(data, pred = pred, maxit = 50, m = 10, cluster.seed = 30068
 
 data <- complete(data_imp, action = "long", include = TRUE)
 
+data <- data %>% 
+  mutate(across(c(starts_with("contact_"), -contact_frequency),
+           ~if_else(share_contact_na != 1, .x, NA_real_)))
+
+data <- data %>% group_by(.id) %>% 
+  dplyr::mutate(contact_friends_frequency = 
+    ifelse(is.na(first(contact_friends_frequency)), NA_real_, contact_friends_frequency)) %>%
+    ungroup()
+
 ##################################################################
 ##                   3. Create scales                           ##
 ##################################################################
 
 data <- create_scales(data)
 
-# Manual for more complicated scales
-
 ##################################################################
-##                   3. Recode vars                             ##
+##                   4. Recode vars                             ##
 ##################################################################
 
-# Recode variables
-# add more than gender
+# Recode variables - revert negative contact, 
+# as already recoded in dataset
+
 data <- data %>% mutate(
-  gender = fct_collapse(as_factor(gender), 
-    male = "1", female = "2",
-    other_level = "other/not reported")
-)
+ contact_negative = -1 * contact_negative) %>%  
+ select(-share_contact_na)
 
 ##################################################################
-##               4. Reproduce descriptives                      ##
+##               5. Reproduce descriptives                      ##
 ##################################################################
 
 data %>% 
@@ -95,29 +100,26 @@ data %>%
   filter(TRUE) %>% #as per original article
   select(!starts_with("CMA_"), -weight, -.id, -.imp) %>%
   select(all_of(sort(colnames(.)))) %>%
-  mutate(gender = (gender == "female") %>% as.numeric()) %>%
   cor_matrix() %>%
   report_cor_table(filename = here(glue::glue("3_data_processed/cor_tables/{dataset_name}_cor_table_generated_pairwise_del (N = {range_(.$n, 0, TRUE)}).html")))
+
+log("Attention check not documented and thus ignored. According to article, negligible impact.")
 
 data %>% 
   filter(.imp != "0") %>%
   filter(TRUE) %>% #as per original article
   select(!starts_with("CMA_"), -.id) %>%
   select(all_of(sort(colnames(.)))) %>%
-  mutate(gender = (gender == "female") %>% as.numeric()) %>%
   cor_matrix_mi(weights = weight) %>%
   report_cor_table(filename = here(glue::glue("3_data_processed/cor_tables/{dataset_name}_cor_table_generated_MI (N = {.$n[1,2]}).html")))
 
+
 ##################################################################
-##                 5. Create output files                       ##
+##                 6. Create output files                       ##
 ##################################################################
 
-# Create filter variable to remove outgroup members
-data <- data %>% mutate(filter = case_when(white ~ "high_status",
-                                           not_black ~ "not_outgroup")) %>%
-  filter(!is.na(filter)) %>%
-  select(everything())
-
+data <- data %>% mutate(filter = "high_status") %>%
+  filter(!is.na(filter))
 
 # Convert to long data
 data_long <- data %>% make_long()
