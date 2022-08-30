@@ -26,7 +26,7 @@ miss_summary <- miss_var_summary(data)
 if(sum(miss_summary$n_miss) == 0 ) {
     log("MISSING DATA: ", "All cases were complete")
 } else {
-    log("MISSING DATA: ", 
+    log("MISSING DATA: ",
     glue::glue("Variables had up to {max(miss_summary$pct_miss)} missing data"))
 }
 
@@ -36,7 +36,13 @@ if(sum(miss_summary$n_miss) == 0 ) {
 
 data <- create_scales(data)
 
-# Manual for more complicated scales
+# Reverse attitudes so that greater = more positive
+# Check through political_orientation (greater: right-wing)
+  data %>% select(starts_with("attitude_"), political_orientation) %>%
+    cor_matrix() %>% .[[1]] %>% .[, "political_orientation"] %>% t() %>% data.frame()
+
+#Article supports that majority of items is in line with prejudice - so
+  data <- data %>% mutate(attitude_belief = reverse_code(attitude_belief))
 
 ##################################################################
 ##                   3. Recode vars                             ##
@@ -45,7 +51,7 @@ data <- create_scales(data)
 # Recode variables
 # add more than gender
 data <- data %>% mutate(
-  gender = fct_collapse(as_factor(gender), 
+  gender = fct_collapse(as_factor(gender),
     male = "1", female = "2",
     other_level = "other/not reported")
 )
@@ -55,7 +61,7 @@ data <- data %>% mutate(
 ##################################################################
 
 
-data %>% 
+data %>%
   select(!starts_with("CMA_"), -weight) %>%
   select(all_of(sort(colnames(.)))) %>%
   mutate(gender = (gender == "female") %>% as.numeric()) %>%
@@ -65,6 +71,9 @@ data %>%
 ##################################################################
 ##                 5. Create output files                       ##
 ##################################################################
+
+data <- data %>% mutate(filter = case_when(gender == "male" ~ "high_status",
+                          TRUE ~ "not_outgroup")) #Not sure if women should be excluded ...
 
 # Convert to long data
 data_long <- data %>% make_long()

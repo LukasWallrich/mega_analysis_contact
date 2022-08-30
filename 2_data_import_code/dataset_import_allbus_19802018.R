@@ -26,10 +26,10 @@ data <- read_and_augment(dataset_name)
 
 # Check types and missingness codes
 # data %>% select(-all_of(outlist)) %>% summarise(across(where(is.numeric), range_)) %>% glimpse()
-#  
+#
 
 # Fix types
-data <- data %>% 
+data <- data %>%
   mutate(across(c(german, gender), as_factor),
   german = if_else(german != "CANNOT BE GENERATED", german, factor(NA)) %>% droplevels()) %>%
   # remove foreigners post 1994 since they were not asked about contact
@@ -47,8 +47,8 @@ data <- data %>% filter(collection_year %in% relevant_years)
 
 # Assess missing data
 
-miss_summary <- data %>% select(-weight, -starts_with("CMA_")) %>% 
-    group_by(collection_year) %>% miss_var_summary() 
+miss_summary <- data %>% select(-weight, -starts_with("CMA_")) %>%
+    group_by(collection_year) %>% miss_var_summary()
 
 
 # Drop variable-year combinations that are all missing
@@ -70,10 +70,10 @@ data_years <- map2(data_years, names(data_years), function(df, year) {
 
 # Remove those with all contact items missing in 1990 and 2000 - split ballots
 
-data_years[["1990"]] <- data_years[["1990"]] %>% 
+data_years[["1990"]] <- data_years[["1990"]] %>%
     filter(rowSums(across(starts_with("contact"), is.na)) != 4)
 
-data_years[["2000"]] <- data_years[["2000"]] %>% 
+data_years[["2000"]] <- data_years[["2000"]] %>%
     filter(rowSums(across(starts_with("contact"), is.na)) != 4)
 
 # Report missing
@@ -105,7 +105,7 @@ walk(relevant_years, function(year) {
 })
 
 #Use quickpred extension that considers unordered factors correctly
-source("https://raw.githubusercontent.com/LukasWallrich/rNuggets/0a15ae9c9fc163687eb9f0ad25f899ee370eb4d6/R/mice_quickpred_extension.R")
+source(here("0_code_helpers", "mice_quickpred_extension.R"))
 
 pred <- relevant_years %>% set_names() %>% map(function(year) {
     data_years[[as.character(year)]] %>% quickpred_ext(exclude = outlist)
@@ -121,9 +121,11 @@ data_imp <- future_map(.options = furrr_options(seed = 300688),
         data <- data_years[[as.character(year)]] %>% zap_labels() %>%
             mutate(across(where(is.factor), droplevels))
         preds <- pred[[as.character(year)]]
-        mice(data, pred = preds, maxit = 50, m = 10) %>%
+        mice(data, pred = preds, maxit = 50, m = 10, printFlag = FALSE) %>%
             complete(action = "long", include = TRUE)
 })
+
+message(glue::glue("Done imputing"))
 
 ##################################################################
 ##                   3. Create scales                           ##
@@ -131,7 +133,7 @@ data_imp <- future_map(.options = furrr_options(seed = 300688),
 
 data <- map(relevant_years %>% set_names(), function(year) { #(.options = furrr_options(seed = 300688)
         message(glue::glue("Scale creation for {year}"))
-  
+
          data_imp[[as.character(year)]] %>%
             create_scales(variables_years[[as.character(year)]])
             })
@@ -148,25 +150,26 @@ map_dfr(relevant_years, function(year) {
 
 
 ##################################################################
-##                   3. Recode vars                             ##
+##                   4. Recode vars                             ##
 ##################################################################
 
 # Recode variables
 # add more than gender
 data <- map(data, ~mutate(.x,
-  gender = fct_collapse(as_factor(gender), 
+  gender = fct_collapse(as_factor(gender),
     male = "MALE", female = "FEMALE",
-    other_level = "other/not reported")
+    other_level = "other/not reported"),
+  contact_contexts_binary = reverse_code(contact_contexts_binary)
 ))
 
 ##################################################################
-##               4. Reproduce descriptives                      ##
+##               5. Reproduce descriptives                      ##
 ##################################################################
 
 walk(relevant_years, function(year) {
 
 
-data[[as.character(year)]] %>% 
+data[[as.character(year)]] %>%
   filter(.imp == "0") %>%
   select(!starts_with("CMA_"), -weight, -.id, -.imp, , -collection_year) %>%
   select(all_of(sort(colnames(.)))) %>%
@@ -174,7 +177,7 @@ data[[as.character(year)]] %>%
   cor_matrix() %>%
   report_cor_table(filename = here(glue::glue("3_data_processed/cor_tables/{dataset_name}_{year}_cor_table_generated_pairwise_del (N = {range_(.$n, 0, TRUE)}).html")))
 
-data[[as.character(year)]] %>% 
+data[[as.character(year)]] %>%
   filter(.imp != "0") %>%
   select(!starts_with("CMA_"), -.id, -collection_year) %>%
   select(all_of(sort(colnames(.)))) %>%
@@ -194,7 +197,9 @@ data_both <- map(data, function(data) {
 
     data <- data %>% mutate(filter = case_when(german == "YES, EXCLUSIVELY" ~ "high_status",
                                            !is.na(german) ~ "not_outgroup"),
-                                           CMA_year = collection_year) %>%
+                                           CMA_year = collection_year,
+                                           CMA_subgroup = CMA_year
+    ) %>%
   filter(!is.na(filter)) %>%
   select(everything(), -collection_year)
 

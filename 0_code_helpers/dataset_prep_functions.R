@@ -2,10 +2,20 @@
 #' Logs text to a dataset_cleaning.log file in raw data folder
 
 log <- function(..., dataset) {
-  if (missing(dataset)) {
-    if (!exists("dataset_name")) stop("To log, either dataset needs to be specified or global dataset_name variable needs to exist")
-    dataset = dataset_name
-  }
+  if (missing(dataset)) { #Search manually recursively as otherwise RStudio Background Job fails
+      name1 <- parent.frame(n=1)$dataset_name
+      name2 <- parent.frame(n=2)$dataset_name
+      name3 <- parent.frame(n=3)$dataset_name
+      name4 <- parent.frame(n=4)$dataset_name
+      name5 <- parent.frame(n=5)$dataset_name
+      name6 <- parent.frame(n=6)$dataset_name
+      name7 <- parent.frame(n=7)$dataset_name
+      name8 <- parent.frame(n=8)$dataset_name
+      name9 <- parent.frame(n=9)$dataset_name
+      dataset <- first(c(name1, name2, name3, name4, name5, name6, name7, name8, name9))
+    }
+    if (is.null(dataset)) stop("To log, either dataset needs to be specified or global dataset_name variable needs to exist")
+
 
   message <- list(...) %>% str_flatten(collapse = "\n")
 
@@ -60,6 +70,10 @@ read_and_augment <- function(dataset_name, ...) {
     } else {
       data <- rlang::exec("read_csv", here("1_data_raw", metadata$dataset, metadata$filename), col_select = all_of(variables$name), !!!dots)
     }
+  } else if (file_type == "xls" | file_type == "xls") {
+    message("Reading from first Excel sheet (unless sheet argument is specified")
+    data <- readxl::read_excel(here("1_data_raw", metadata$dataset, metadata$filename), ...) %>%
+      select(all_of(variables$name))
   } else {
     stop("Add code for filetype: ", file_type)
   }
@@ -91,6 +105,9 @@ read_and_augment <- function(dataset_name, ...) {
   if (!"weight" %in% names(data)) {
     data <- data %>% mutate(weight = 1)
   }
+  if (!"CMA_subgroup" %in% names(data)) {
+    data <- data %>% mutate(CMA_subgroup = 1)
+  }
 
   data
 }
@@ -100,11 +117,25 @@ read_and_augment <- function(dataset_name, ...) {
 
 create_scales <- function(data, variables_tibble = NULL) {
   if (is.null(variables_tibble)) {
-      variables_tibble <- read_csv(here("0_metadata/variables.csv"), show_col_types = FALSE) %>% 
+      name1 <- parent.frame(n=1)$dataset_name
+      name2 <- parent.frame(n=2)$dataset_name
+      name3 <- parent.frame(n=3)$dataset_name
+      name4 <- parent.frame(n=4)$dataset_name
+      name5 <- parent.frame(n=5)$dataset_name
+      dataset_name <- first(c(name1, name2, name3, name4, name5))
+
+      if (is.null(dataset_name)) stop("To create scales, either variable_tibble needs to be specified or global dataset_name variable needs to exist")
+
+      variables_tibble <- read_csv(here("0_metadata/variables.csv"), show_col_types = FALSE) %>%
       filter(dataset == dataset_name)
   }
 
   mi <- ".imp" %in% names(data)
+
+  if (length(na.omit(unique(variables_tibble$scale)))==0) {
+    warning("No scales specified in variables tibble.")
+    return(data)
+  }
 
   # Make scales
   data <- map_dfc(na.omit(unique(variables_tibble$scale)), function(scale_name) {
@@ -113,11 +144,10 @@ create_scales <- function(data, variables_tibble = NULL) {
   if(length(scale_items) == 1) {
     message(scale_name, " consists of single item. This is simply renamed (and reversed if _rev is included in the name).")
     if (str_detect(scale_items, "_rev")) {
-      data[[scale_items]] <- (max(data[[scale_items]], na.rm = TRUE) + min(data[[scale_items]], na.rm = TRUE)) - data[[scale_items]] 
+      data[[scale_items]] <- (max(data[[scale_items]], na.rm = TRUE) + min(data[[scale_items]], na.rm = TRUE)) - data[[scale_items]]
     }
     return(tibble(!!scale_name := data[[scale_items]]))
   }
-
     reverse <- "auto"
     reverse_items <- NULL
     if (any(str_detect(scale_items, "_rev$"))) {
@@ -126,7 +156,7 @@ create_scales <- function(data, variables_tibble = NULL) {
     }
     if(mi) {
      out <- make_scale_mi(data,  scale_items,
-      scale_name, print_desc = FALSE, return_list = TRUE, 
+      scale_name, print_desc = FALSE, return_list = TRUE,
       reverse = reverse, reverse_items = reverse_items)
     } else {
      out <- make_scale(data, scale_items,
@@ -135,14 +165,14 @@ create_scales <- function(data, variables_tibble = NULL) {
     }
     log(out$descriptives$text)
     tibble(!!scale_name := out$scores)
-  }) %>% bind_cols(data %>% 
+  }) %>% bind_cols(data %>%
     select(-any_of(na.omit(unique(variables_tibble$scale)))), #Remove single-item "scales" (sometimes in multi-sample (social survey) datasets)
     .)
 
   # Drop scale items and rename variables
 
-  data <- data %>% 
-    select(-all_of(variables_tibble %>% 
+  data <- data %>%
+    select(-all_of(variables_tibble %>%
                    filter(!is.na(scale)) %>% pull(var)))
 
   data
@@ -152,7 +182,7 @@ create_scales <- function(data, variables_tibble = NULL) {
 
 make_long <- function(data) {
   data %>%
-    pivot_longer(starts_with("contact"), names_to = "contact_var", values_to = "contact") %>% 
+    pivot_longer(starts_with("contact"), names_to = "contact_var", values_to = "contact") %>%
     pivot_longer(starts_with("attitude"), names_to = "attitude_var", values_to = "attitude") %>%
     separate(attitude_var, c(NA, "attitude_type", "attitude_type_detail"), sep = "_", extra = "merge", fill = "right", remove = FALSE) %>%
     separate(contact_var, c(NA, "contact_type", "contact_type_detail"), sep = "_", extra = "merge", fill = "right", remove = FALSE) %>%
@@ -175,4 +205,8 @@ range_ <- function(x, digits = 2, simplify = FALSE) {
 
 print_levels <- function(x) {
   glue::glue_collapse(levels(as_factor(x)), sep = ", ", last = " & ")
+}
+
+reverse_code <- function(x) {
+  max(x, na.rm = TRUE) + min(x, na.rm = TRUE) - x
 }

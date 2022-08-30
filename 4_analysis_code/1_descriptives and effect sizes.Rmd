@@ -1,0 +1,226 @@
+---
+title: "Stage 1 analyses - effect sizes"
+author: "Lukas Wallrich"
+date: "2022-08-30"
+output: html_document
+---
+
+```{r setup}
+# Suppress package startup messages
+library <- function(...) suppressPackageStartupMessages(base::library(...))
+
+# Load required packages
+library(tidyverse)
+library(here)
+library(timesaveR)
+library(effectsize)
+```
+
+## Data included
+
+```{r}
+long_datasets <- list.files(here("3_data_processed"), "long")
+
+data_list <- map(long_datasets, ~read_rds(here("3_data_processed", .x)))
+
+names(data_list) <- map(data_list, ~.x$CMA_dataset[1])
+
+quick_collapse <- partial(glue::glue_collapse, sep = ", ", last = " & ")
+
+#bal_2022: female managers
+samples <- map_dfr(data_list, function(data) {
+  tibble(dataset = unique(data$CMA_dataset), samples_years = length(unique(data$CMA_year)),N = length(unique(data$CMA_partid)), 
+         target = quick_collapse(unique(data$CMA_outgroup_category)))
+})
+
+skewness <- function(x, na.rm = TRUE) {
+  if (na.rm == TRUE) x = na.omit(x)
+  (sum((x-mean(x))^3)/length(x))/(sd(x)^3)
+}
+
+measures <- map_dfr(data_list, function(data) {
+  data_used <- data
+  if (".imp" %in% names(data)) data_used <- data %>% filter(.imp == 1)
+  out <- data_used %>% group_by(CMA_dataset, CMA_outgroup_specific, contact_var, attitude_var) %>%
+    summarise(N = sum(!is.na(attitude) & !is.na(contact)), contact_range = diff(range(contact, na.rm = TRUE)), 
+              attitude_range = diff(range(attitude, na.rm = TRUE)), 
+              contact_skew = skewness(contact), attitude_skew = skewness(attitude), .groups = "drop")
+  if (".imp" %in% names(data)) data_used <- data %>% filter(.imp == 0) #Use original data to identify binary variables
+  data_used %>% group_by(CMA_dataset, CMA_outgroup_specific, contact_var, attitude_var) %>%
+    summarise(contact_options = length(na.omit(unique(contact))), 
+              attitude_options = length(na.omit(unique(attitude))), .groups = "drop") %>% 
+    left_join(out, ., by = c("CMA_dataset", "CMA_outgroup_specific", "contact_var", "attitude_var"))
+  
+  
+})
+
+measures <- measures %>% 
+  mutate(social_survey = if_else(CMA_dataset %in% c("allbus_19802018", "GSS_19722021"), TRUE, FALSE))
+
+measures %>%
+  filter(!str_detect(contact_var, "negative"), contact_options > 2) %>%
+  distinct(CMA_dataset, contact_var, .keep_all = TRUE) %>%
+  ggplot(aes(contact_skew, contact_range, color = social_survey)) +
+  geom_point() +
+  labs(title = "Contact measures tend to be positively skewed", 
+       caption = "Negative contact and binary indicators excluded") +
+  geom_vline(xintercept = -2, col = "red") +
+  geom_vline(xintercept = 2, col = "red")
+
+measures %>%
+  filter(str_detect(contact_var, "negative|positive"), contact_options > 2) %>%
+  distinct(CMA_dataset, contact_var, .keep_all = TRUE) %>%
+  mutate(valence = if_else(str_detect(contact_var, "negative"), "negative", "positive")) %>%
+  ggplot(aes(contact_skew, contact_range, shape = social_survey, color = valence)) +
+  geom_point() +
+  labs(title = "Negative and positive contact tend to have opposite skew", 
+       caption = "Negative contact and binary indicators excluded") +
+  geom_vline(xintercept = -2, col = "red") +
+  geom_vline(xintercept = 2, col = "red") +
+  geom_line(aes(group = paste(CMA_dataset, contact_var %>% str_remove("positive|negative"))), col = "grey")
+
+measures %>%
+  filter(attitude_options > 2) %>%
+  distinct(CMA_dataset, attitude_var, .keep_all = TRUE) %>%
+  ggplot(aes(attitude_skew, attitude_range, color = social_survey)) +
+  geom_point() +
+  labs(title = "Attitude measures are rarely skewed", caption = "Binary indicators excluded") +
+  geom_vline(xintercept = -2, col = "red") +
+  geom_vline(xintercept = 2, col = "red")
+
+
+```
+
+## Calculating effect sizes
+
+Excluding negative contact for now
+
+```{r}
+
+scale_this <- function(x){
+  (x - mean(x, na.rm=TRUE)) / sd(x, na.rm=TRUE)
+}
+
+cont_attitudes <- measures %>% filter(attitude_options > 2, !str_detect(contact_var, "negative"))
+binary_attitudes <- measures %>% filter(attitude_options == 2, !str_detect(contact_var, "negative"))
+
+correlations <- pmap_dfr(cont_attitudes, function(...) {
+  current <- tibble(...)
+  data <- data_list[[current$CMA_dataset]]%>% 
+    mutate(CMA_subgroup = as.character(CMA_subgroup))  %>% 
+    filter(attitude_var == current$attitude_var, contact_var == current$contact_var)
+  
+  if(!".imp" %in% names(data)) {
+  data  %>%
+    group_by(CMA_dataset, CMA_subgroup, CMA_outgroup_specific, attitude_var, contact_var) %>%
+    mutate(across(c(contact, attitude), scale_this)) %>%
+    nest_by() %>% 
+    summarise(mod = lm(attitude ~ contact, data = data) %>% broom::tidy(conf.int = TRUE) %>% list(),
+              r = mod %>% filter(term == "contact") %>% pull(estimate),
+              r_conf.low = mod %>% filter(term == "contact") %>% pull(conf.low),
+              r_conf.high = mod %>% filter(term == "contact") %>% pull(conf.high),
+              p = mod %>% filter(term == "contact") %>% pull(p.value),
+              effect_size = "r",
+              N = nrow(data),
+              .groups = "drop")
+    
+  } else {
+  data_mi <- data %>% filter(.imp != 0) %>% split(.$.imp)
+  
+  #Create one model per imputation
+  model_list <- map(data_mi, function(data) {
+
+    data %>%
+      group_by(CMA_dataset, CMA_subgroup, CMA_outgroup_specific, attitude_var, contact_var) %>%
+      mutate(across(c(contact, attitude), scale_this)) %>%
+      nest_by() %>% 
+      summarise(mod = list(lm(attitude ~ contact, data = data)), .groups = "drop") %>% pull(mod)
+    })
+  
+  #Retrieve groups
+  group_list <- data_mi[[1]] %>%
+      group_by(CMA_dataset, CMA_subgroup, CMA_outgroup_specific, attitude_var, contact_var) %>%
+      nest_by() %>% 
+      summarise(N = nrow(data), .groups = "drop")
+    
+  #Pool models per group, then merge with groups
+  models <- model_list %>% transpose() %>% map(~.x %>% mice::as.mira() %>% mice::pool() %>% tidy(conf.int = TRUE))
+     
+  models %>% map_dfr(~tibble(
+              r = .x %>% filter(term == "contact") %>% pull(estimate),
+              r_conf.low = .x %>% filter(term == "contact") %>% pull(conf.low),
+              r_conf.high = .x %>% filter(term == "contact") %>% pull(conf.high),
+              p = .x %>% filter(term == "contact") %>% pull(p.value)
+  )) %>% bind_cols(group_list, .)
+  
+  }
+})
+
+odds_ratios <- pmap_dfr(binary_attitudes, function(...) {
+  current <- tibble(...)
+  data <- data_list[[current$CMA_dataset]] %>% 
+    filter(attitude_var == current$attitude_var, contact_var == current$contact_var) %>%
+    mutate(CMA_subgroup = as.character(CMA_subgroup))
+  
+  if(!".imp" %in% names(data)) {
+  
+  data %>% 
+    group_by(CMA_dataset, CMA_subgroup, CMA_outgroup_specific, attitude_var, contact_var) %>% 
+    mutate(contact = scale_this(contact), attitude = case_when(
+      attitude == max(attitude, na.rm = TRUE) ~ 1,
+      attitude == min(attitude, na.rm = TRUE) ~ 0,
+      TRUE ~ attitude)) %>%
+    nest_by() %>% 
+    summarise(mod = glm(attitude ~ contact, family = binomial, data = data) %>% 
+                broom::tidy(exponentiate = TRUE, conf.int = TRUE) %>% list(),
+              OR = mod %>% filter(term == "contact") %>% pull(estimate),
+              OR_conf.low = mod %>% filter(term == "contact") %>% pull(conf.low),
+              OR_conf.high = mod %>% filter(term == "contact") %>% pull(conf.high),
+              p = mod %>% filter(term == "contact") %>% pull(p.value), 
+              N = nrow(data), .groups = "drop")
+    
+  } else { #if multiple-imputation data
+  data_mi <- data %>% filter(.imp != 0) %>% split(.$.imp)
+  
+  #Create one model per imputation
+  model_list <- map(data_mi, function(data) {
+
+    data %>%
+      group_by(CMA_dataset, CMA_subgroup, CMA_outgroup_specific, attitude_var, contact_var) %>%
+      mutate(across(c(contact), scale_this)) %>%
+      nest_by() %>% 
+      summarise(mod = list(glm(attitude ~ contact, family = binomial, data = data)), .groups = "drop") %>% pull(mod)
+    })
+  
+  #Retrieve groups
+  group_list <- data_mi[[1]] %>%
+      group_by(CMA_dataset, CMA_subgroup, CMA_outgroup_specific, attitude_var, contact_var) %>%
+      nest_by() %>% 
+      summarise(N = nrow(data), .groups = "drop")
+    
+  #Pool models per group, then merge with groups
+  models <- model_list %>% transpose() %>% map(~.x %>% mice::as.mira() %>% mice::pool() %>% tidy(conf.int = TRUE))
+     
+  models %>% map_dfr(~tibble(
+              OR = .x %>% filter(term == "contact") %>% pull(estimate) %>% exp(),
+              OR_conf.low = .x %>% filter(term == "contact") %>% pull(conf.low) %>% exp(),
+              OR_conf.high = .x %>% filter(term == "contact") %>% pull(conf.high) %>% exp(),
+              p = .x %>% filter(term == "contact") %>% pull(p.value)
+  )) %>% bind_cols(group_list, .)
+  
+  }
+})
+
+odds_ratios <- odds_ratios %>% mutate(r = oddsratio_to_r(OR), conf.low = oddsratio_to_r(OR_conf.low), 
+                                      conf.low = oddsratio_to_r(OR_conf.high), effect_size = "OR")
+
+effect_sizes <- bind_rows(correlations %>% select(-mod), odds_ratios %>% select(-mod)) %>% 
+  mutate(social_survey = if_else(CMA_dataset %in% c("allbus_19802018", "GSS_19722021"), TRUE, FALSE))
+
+```
+
+```{r}
+ggplot(effect_sizes, aes(N, r, col = social_survey, share = effect_size)) + geom_point()
+```
+
+

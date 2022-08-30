@@ -41,13 +41,13 @@ variables <- read_csv(here("0_metadata/variables.csv"), show_col_types = FALSE) 
     filter(dataset == dataset_name) %>%
     mutate(name = tolower(name), var = tolower(var))
 
-# Basic vars 
-basic_vars <- variables %>% filter(note == "all") %>% 
+# Basic vars
+basic_vars <- variables %>% filter(note == "all") %>%
     pull(name) %>%
-    tolower() 
-helper_vars <- variables %>% filter(note == "helper") %>% 
+    tolower()
+helper_vars <- variables %>% filter(note == "helper") %>%
     pull(name) %>%
-    tolower() 
+    tolower()
 
 # Set metadata
 
@@ -80,10 +80,10 @@ attitude_measures_targets <- variables %>%
     separate(note, c(NA, "target"), extra = "drop") %>%
     mutate(name = tolower(name))
 
-contact_measures_years <- contact_measures_targets %>% 
-    pull(name) %>% gss_which_years(gss_all, .) %>% 
-    pivot_longer(-year) %>% filter(value) %>% 
-    select(-value) %>% left_join(contact_measures_targets %>% select(name, target)) 
+contact_measures_years <- contact_measures_targets %>%
+    pull(name) %>% gss_which_years(gss_all, .) %>%
+    pivot_longer(-year) %>% filter(value) %>%
+    select(-value) %>% left_join(contact_measures_targets %>% select(name, target))
 
 attitude_measures_years <- attitude_measures_targets %>%
     pull(name) %>%
@@ -109,14 +109,14 @@ race_years <- contact_targets_years %>%
 
 contact_targets_years <- contact_targets_years %>%
     filter(target != "race") %>%
-    bind_rows(map_dfr(race_years, ~ tibble(year = .x, target = c("black", "white", "asianam", "hispanic")))) %>% 
+    bind_rows(map_dfr(race_years, ~ tibble(year = .x, target = c("black", "white", "asianam", "hispanic")))) %>%
     distinct()
 
 contact_targets_years <- contact_targets_years %>% mutate(
     target
 )
 
-combinations <- contact_targets_years %>% 
+combinations <- contact_targets_years %>%
     semi_join(attitude_targets_years)
 
 contact_targets_years %>%
@@ -149,8 +149,8 @@ combinations <- combinations %>% mutate(
     status_crit = case_when(
         target == "mentalhealth" ~ "TRUE",
         target == "black" ~ "race == 1 & (is.na(hispanic) | hispanic == 1)", #Includes hispanic for 1998
-        target == "hispanic" ~ "race == 1", 
-        target == "asianam" ~ "race == 1 & hispanic == 1", 
+        target == "hispanic" ~ "race == 1",
+        target == "asianam" ~ "race == 1 & hispanic == 1",
         target == "white" ~ "FALSE",
         target == "AIDS" ~ "TRUE", #Not collected
         target == "gay" ~ "TRUE", #Sex orient only collected from 2008 onwards
@@ -165,12 +165,12 @@ data_years <- pmap(combinations, function(...) {
     message("Processing ", combination$year, ": ",combination$target)
 
     contact_vars <- contact_measures_years %>%
-        filter(year == combination$year, 
+        filter(year == combination$year,
               target == combination$target) %>%
         pull(name)
 
     if (combination$target %in% c("black", "white", "asianam", "hispanic")) {
-        contact_vars <- c(contact_vars, 
+        contact_vars <- c(contact_vars,
         contact_measures_years %>%
         filter(year == combination$year, target == "race") %>%
         pull(name)
@@ -223,7 +223,7 @@ data_years <- map(data_years, function(d) {
         if(v %in% colnames(d)) {
             white_var <- paste0(str_sub(v, 1, 4), "whts")
 #            message(unique(d$year), "_", unique(d$CMA_outgroup_specific), ": ", v, " - ", white_var)
-            d[[v]] <<- d[[v]] - d[[white_var]] 
+            d[[v]] <<- d[[v]] - d[[white_var]]
         }
     })
     d
@@ -246,7 +246,7 @@ unbiased <- map_dfr(data_years, function(d) {
     walk(vars_to_recode, function(v) {
         if(v %in% colnames(d)) {
             m <- mean(d[[v]], na.rm = TRUE)
-            if (sign(m) != bias_signs[str_sub(v, 1, 4)]) 
+            if (sign(m) != bias_signs[str_sub(v, 1, 4)])
                 x <<- bind_rows(x, tibble(variable = v))
 
         }})
@@ -271,20 +271,20 @@ pwalk(unbiased, function(...) {
 ##                   2. Check missing data                      ##
 ##################################################################
 
-# Currently, missing data types are not distinguished (https://github.com/kjhealy/gssr/issues/3) - and split ballots should probably not be imputed. Therefore, missing data is retained. 
+# Currently, missing data types are not distinguished (https://github.com/kjhealy/gssr/issues/3) - and split ballots should probably not be imputed. Therefore, missing data is retained.
 
 #Once that is fixed, consider taking imputation code from ALLBUS.
 
 #However, some 98s and 99s represent missing data (https://github.com/kjhealy/gssr/issues/8) - but not in the data here
 suspicious <- map_dfr(data_years, function(x) {
     year <- unique(x$year)
-    x %>% 
-        summarise(across(everything(), 
-            ~(any(na.omit(.x == 98 | .x == 99)) & 
-            !any(na.omit(.x == 97))))) %>% 
-        pivot_longer(everything()) %>% 
-        filter(value) %>% 
-        select(name) %>% 
+    x %>%
+        summarise(across(everything(),
+            ~(any(na.omit(.x == 98 | .x == 99)) &
+            !any(na.omit(.x == 97))))) %>%
+        pivot_longer(everything()) %>%
+        filter(value) %>%
+        select(name) %>%
         mutate(year = year)
         })
 
@@ -314,7 +314,7 @@ data_years <- map(data_years, function(df) {
         df["contact_acquaintance_count"] <- scale$scores
 
         log(glue::glue("{df$year[1]}_{df$CMA_outgroup_specific[1]}: {scale$descriptives$text}"))
-        
+
         df <- df %>% select(-all_of(acqu_vars))
     }
 
@@ -328,7 +328,7 @@ data_years <- map(data_years, function(df) {
          )
 
         df["contact_friend_count"] <- df %>% select(starts_with("frndrac")) %>% mutate(across(everything(), ~.x == cond)) %>% rowSums(na.rm = TRUE) #Missing dropped because many reported less than 5
-      
+
         df["contact_friend_count"][is.na(df["frndrac1"])] <- NA # NA where no race is reported
 
         df <- df %>% select(-starts_with("frndrac"))
@@ -343,32 +343,32 @@ data_years <- map(data_years, function(df) {
             TRUE ~ NA_real_
          )
 
-        df["contact_friend_count"] <- df %>% select(all_of(paste0("race", 1:5))) %>% mutate(across(everything(), ~.x == cond)) %>% rowSums(na.rm = TRUE) 
-        df["contact_friend_count"][is.na(df["race1"])] <- NA 
+        df["contact_friend_count"] <- df %>% select(all_of(paste0("race", 1:5))) %>% mutate(across(everything(), ~.x == cond)) %>% rowSums(na.rm = TRUE)
+        df["contact_friend_count"][is.na(df["race1"])] <- NA
         df <- df %>% select(-all_of(paste0("race", 1:5)))
     }
 
    if ("relig1" %in% vars) {
 
         df["contact_friend_count"] <- df %>% select(all_of(paste0("relig", 1:5))) %>% mutate(across(everything(), ~.x == 3)) %>% rowSums(na.rm = TRUE)
-        df["contact_friend_count"][is.na(df["relig1"])] <- NA 
+        df["contact_friend_count"][is.na(df["relig1"])] <- NA
         df <- df %>% select(-all_of(paste0("relig", 1:5)))
     }
 
     if (any(str_detect(vars ,".*rel$"))) { #selected because cls not available for Whites
         group <- str_subset(vars, ".*rel$") %>% str_remove("rel$")
- 
+
         df["contact_contexts_binary"] <- df %>% select(all_of(paste0(group, c("wrk", "rel", "com", "schl")))) %>% mutate(across(everything(), ~.x == 1)) %>% rowSums(na.rm = TRUE)
 
         know_var <- paste0("knw", group)
         if (know_var == "knwjews") know_var <- "knwjew" #Inconsistent naming
 
-        df["contact_contexts_binary"][df[know_var] == 2] <- 0 
-        
+        df["contact_contexts_binary"][df[know_var] == 2] <- 0
+
         if (any(str_detect(vars ,".*cls$"))) df["contact_close_any"] <- as.numeric(df[paste0(group, "cls")] == 1)
 
-        df <- df %>% 
-            select(-any_of(c(paste0(group, c("wrk", "rel", "com", "schl", "cls")), know_var)))    
+        df <- df %>%
+            select(-any_of(c(paste0(group, c("wrk", "rel", "com", "schl", "cls")), know_var)))
     }
 
     #Remove "other" answer options
@@ -383,11 +383,11 @@ data_years <- map(data_years, function(df) {
     df %>% rename(all_of(renames))
 })
 
-scales <- map(data_years, ~variables %>% 
+scales <- map(data_years, ~variables %>%
     filter(!is.na(scale), var %in% names(.x)))
 
 data_years <- map2(data_years, scales, function(df, scales) {
-    if (nrow(scales)>0) { 
+    if (nrow(scales)>0) {
         log(glue::glue("\n\n{df$year[1]}_{df$CMA_outgroup_specific[1]}:"))
         create_scales(df, scales)
     } else {
@@ -425,7 +425,7 @@ cors <- map_dfr(data_years, function(df) {
     group <- df$CMA_outgroup_specific[1]
     df <-  df %>% select(starts_with("attitude_"), political_orientation)
     df %>% cor_matrix() %>% .[[1]] %>% .[, "political_orientation"] %>% t() %>% data.frame(
-    ) %>% mutate(year = year, group = group) 
+    ) %>% mutate(year = year, group = group)
 })
 
 # Deviations look plausible (and double checked coding there)
@@ -433,12 +433,12 @@ cors %>% pivot_longer(-c(year, group)) %>% filter(value > 0, value != 1)
 
 # Recode gender and drop helper vars
 data_years <- map(data_years, ~mutate(.x,
-  gender = fct_collapse(as_factor(gender), 
+  gender = fct_collapse(as_factor(gender),
     male = "male", female = "female",
     other_level = "other/not reported")
 ) %>% select(-all_of(helper_vars)))
 
-# Remove 2004_jews ... contact only based on religion of 5 closest people, 
+# Remove 2004_jews ... contact only based on religion of 5 closest people,
 # and thus too rare (only 6 with any contact)
 
 data_years[["2004_jews"]] <- NULL
@@ -462,8 +462,8 @@ walk(data_years, function(df) {
         mutate(gender = (gender == "female") %>% as.numeric()) %>%
         zap_labels() %>%
         as_survey_design(weights = weight) %>%
-        svy_cor_matrix(setdiff(names(.$variables), "weight") %>% set_names(.)) 
-        
+        svy_cor_matrix(setdiff(names(.$variables), "weight") %>% set_names(.))
+
     last_cors    %>%
         report_cor_table(filename = here(glue::glue("3_data_processed/cor_tables/GSS_{year}_{group}_cor_table_generated_pairwise_del_survey_weighted (unweighted N = {nrow(df)}).html")))
 })
@@ -482,12 +482,12 @@ data_both <- map(data_years, function(df) {
 
     df_l <- make_long(df %>% zap_labels()) #To avoid wrong labels after reshaping
 
-    pairings <<- df_l %>% group_by(contact_var, attitude_var) %>% 
+    pairings <<- df_l %>% group_by(contact_var, attitude_var) %>%
         summarise(N = sum(!is.na(contact) & !is.na(attitude)), .groups = "drop") %>%
         mutate(year = df$CMA_year[1], group = df$CMA_outgroup_specific[1]) %>%
         bind_rows(pairings, .)
 
-    df_l <- df_l %>% group_by(contact_var, attitude_var) %>% 
+    df_l <- df_l %>% group_by(contact_var, attitude_var) %>%
         filter(sum(!is.na(contact) & !is.na(attitude)) > 0) %>%
         ungroup()
 
@@ -496,13 +496,15 @@ data_both <- map(data_years, function(df) {
         return (NULL)
     }
 
-    df <- df_l %>% 
+    df_l <- df_l %>% mutate(CMA_subgroup = CMA_year)
+
+    df <- df_l %>%
         select(-contact_type, -contact_type_detail, -attitude_type, -attitude_type_detail) %>%
         pivot_wider(names_from = "attitude_var", values_from = "attitude") %>%
         pivot_wider(names_from = "contact_var", values_from = "contact")
 
    list(long = df_l, wide = df)
-}) 
+})
 
 data_both[sapply(data_both, is.null)] <- NULL
 

@@ -37,7 +37,7 @@ miss_summary <- miss_var_summary(data)
 if(sum(miss_summary$n_miss) == 0 ) {
     log("MISSING DATA: ", "All cases were complete")
 } else {
-    log("MISSING DATA: ", 
+    log("MISSING DATA: ",
     glue::glue("Variables had up to {round_(max(miss_summary$pct_miss), 2)}% missing data"))
 }
 
@@ -48,7 +48,7 @@ data <- haven::zap_labels(data)
 # Check if any remaining variables are constant or linearly dependent
 # If so, add to outlist
 ini <- mice(data, maxit = 0)
-ini$loggedEvents %>% filter(!out %in% outlist) 
+ini$loggedEvents %>% filter(!out %in% outlist)
 
 #Use quickpred extension that considers unordered factors correctly
 source("https://raw.githubusercontent.com/LukasWallrich/rNuggets/5dc76f1998ca35b07a0434c5c6b19d4812147daa/R/mice_quickpred_extension.R")
@@ -56,7 +56,7 @@ source("https://raw.githubusercontent.com/LukasWallrich/rNuggets/5dc76f1998ca35b
 pred <- quickpred_ext(data, exclude = outlist)
 
 #impute with mice
-data_imp <- parlmice(data, pred = pred, maxit = 50, m = 10, cluster.seed = 300688, printFlag = FALSE, n.core = 5, n.imp.core = 2)
+data_imp <- mice(data, pred = pred, maxit = 50, m = 10, seed = 300688, printFlag = FALSE) #cluster.seed = 300688, printFlag = FALSE, n.core = 5, n.imp.core = 2)
 
 data <- complete(data_imp, action = "long", include = TRUE)
 
@@ -76,7 +76,7 @@ data <- create_scales(data)
 ##               4. Reproduce descriptives                      ##
 ##################################################################
 
-data %>% 
+data %>%
   filter(.imp == "0") %>%
   filter(TRUE) %>% #original article likely used listwise deletion - not reported, so ignored here
   select(!starts_with("CMA_"), -weight, -.id, -.imp) %>%
@@ -85,7 +85,7 @@ data %>%
   cor_matrix() %>%
   report_cor_table(filename = here(glue::glue("3_data_processed/cor_tables/{dataset_name}_cor_table_generated_pairwise_del (N = {range_(.$n, 0, TRUE)}).html")))
 
-data %>% 
+data %>%
   filter(.imp != "0") %>%
   filter(TRUE) %>% #as per original article
   select(!starts_with("CMA_"), -.id) %>%

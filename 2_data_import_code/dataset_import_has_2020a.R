@@ -29,7 +29,7 @@ miss_summary <- miss_var_summary(data)
 if(sum(miss_summary$n_miss) == 0 ) {
     log("MISSING DATA: ", "All cases were complete")
 } else {
-    log("MISSING DATA: ", 
+    log("MISSING DATA: ",
     glue::glue("Variables had up to {round(max(miss_summary$pct_miss),2)}% missing data"))
 }
 
@@ -51,7 +51,7 @@ outlist <- c(str_subset(names(data), "CMA.*"), "weight", "contact_friends_freque
 # Check if any remaining variables are constant or linearly dependent
 # If so, add to outlist
 ini <- mice(data, maxit = 0)
-ini$loggedEvents %>% filter(!out %in% outlist) 
+ini$loggedEvents %>% filter(!out %in% outlist)
 
 #Use quickpred extension that considers unordered factors correctly - from https://raw.githubusercontent.com/LukasWallrich/rNuggets/5dc76f1998ca35b07a0434c5c6b19d4812147daa/R/mice_quickpred_extension.R
 
@@ -61,16 +61,16 @@ pred <- quickpred_ext(data, exclude = outlist)
 
 #impute with mice
 message("Starting imputation")
-data_imp <- parlmice(data, pred = pred, maxit = 50, m = 10, cluster.seed = 300688, printFlag = FALSE, n.core = 5, n.imp.core = 2)
+data_imp <- mice(data, pred = pred, maxit = 50, m = 10, seed = 300688, printFlag = FALSE)#cluster.seed = 300688, printFlag = FALSE, n.core = 5, n.imp.core = 2)
 
 data <- complete(data_imp, action = "long", include = TRUE)
 
-data <- data %>% 
+data <- data %>%
   mutate(across(c(starts_with("contact_"), -contact_frequency),
            ~if_else(share_contact_na != 1, .x, NA_real_)))
 
-data <- data %>% group_by(.id) %>% 
-  dplyr::mutate(contact_friends_frequency = 
+data <- data %>% group_by(.id) %>%
+  dplyr::mutate(contact_friends_frequency =
     ifelse(is.na(first(contact_friends_frequency)), NA_real_, contact_friends_frequency)) %>%
     ungroup()
 
@@ -84,18 +84,18 @@ data <- create_scales(data)
 ##                   4. Recode vars                             ##
 ##################################################################
 
-# Recode variables - revert negative contact, 
+# Recode variables - revert negative contact,
 # as already recoded in dataset
 
 data <- data %>% mutate(
- contact_negative = -1 * contact_negative) %>%  
+ contact_negative = -1 * contact_negative) %>%
  select(-share_contact_na)
 
 ##################################################################
 ##               5. Reproduce descriptives                      ##
 ##################################################################
 
-data %>% 
+data %>%
   filter(.imp == "0") %>%
   filter(TRUE) %>% #as per original article
   select(!starts_with("CMA_"), -weight, -.id, -.imp) %>%
@@ -105,12 +105,11 @@ data %>%
 
 log("Attention check not documented and thus ignored. According to article, negligible impact.")
 
-data %>% 
+data %>%
   filter(.imp != "0") %>%
   filter(TRUE) %>% #as per original article
   select(!starts_with("CMA_"), -.id) %>%
   select(all_of(sort(colnames(.)))) %>%
-  mutate(gender = (gender == "female") %>% as.numeric()) %>%
   cor_matrix_mi(weights = weight) %>%
   report_cor_table(filename = here(glue::glue("3_data_processed/cor_tables/{dataset_name}_cor_table_generated_MI (N = {.$n[1,2]}).html")))
 
